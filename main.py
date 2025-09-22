@@ -5,6 +5,8 @@ import logging
 import shutil
 import sys
 
+import pandas as pd
+
 APP_NAME = "excel-runner"
 logging.basicConfig(
     level=logging.INFO,
@@ -26,3 +28,10 @@ def find_latest_xlsx(folder: Path) -> Path | None:
     return max(files, key=lambda p: p.stat().st_mtime)
 
 
+def validate_required_columns(df: pd.DataFrame, required: Iterable[str] = ("Broker", "Broker_fee", "Quantity"),) -> None:
+    normalized = {str(c).strip().lower(): c for c in df.columns}
+    missing = [col for col in required if col.lower() not in normalized]
+    if missing:
+        raise ValueError(
+            f"Faltan columnas requeridas: {missing}. "
+        )
