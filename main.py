@@ -1,5 +1,8 @@
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Optional
+from collections import OrderedDict
+from openpyxl import load_workbook
+from openpyxl.utils import get_column_letter
 from datetime import datetime
 import logging
 import shutil
@@ -8,6 +11,8 @@ import sys
 import pandas as pd
 
 APP_NAME = "excel-runner"
+REQUIRED_HEADERS = ("Broker", "Broker_fee_total")
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(message)s"
@@ -71,3 +76,11 @@ def prepare_broker_table(
         out = out[leading]
 
     return out
+
+
+def normalize(s) -> str:
+    return str(s).strip().lower() if s is not None else ""
+
+
+def quote_sheet(name: str) -> str:
+    return "'" + name.replace("'", "''") + "'"
