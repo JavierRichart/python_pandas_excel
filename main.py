@@ -131,3 +131,27 @@ def add_broker_summary_sheet(xlsx_path: Path,
         if b is None or str(b).strip() == "":
             continue
         brokers.setdefault(str(b).strip(), True)
+
+    if summary_sheet in wb.sheetnames:
+        del wb[summary_sheet]
+    ws_sum = wb.create_sheet(title=summary_sheet)
+
+    ws_sum["A1"] = "Broker"
+    ws_sum["B1"] = "Total_Broker_fee"
+
+    sheet_ref = quote_sheet(ws_data.title)
+    broker_col_letter = get_column_letter(col_broker)
+    total_col_letter = get_column_letter(col_total)
+    criteria_col = "A"
+
+    data_broker_range = f"{sheet_ref}!{broker_col_letter}2:{broker_col_letter}{last_row}"
+    data_total_range = f"{sheet_ref}!{total_col_letter}2:{total_col_letter}{last_row}"
+
+    row = 2
+    for broker in brokers.keys():
+        ws_sum.cell(row=row, column=1, value=broker)
+        formula = f"SUMIF({data_broker_range}, {criteria_col}{row}, {data_total_range}"
+        ws_sum.cell(row=row, column=2, value=formula)
+        row += 1
+
+    wb.save(xlsx_path)
