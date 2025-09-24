@@ -84,3 +84,50 @@ def normalize(s) -> str:
 
 def quote_sheet(name: str) -> str:
     return "'" + name.replace("'", "''") + "'"
+
+
+def add_broker_summary_sheet(xlsx_path: Path,
+                             data_sheet: Optional[str] = None,
+                             summary_sheet: str = "Broker_Summary") -> None:
+    wb = load_workbook(xlsx_path)
+    ws_data = None
+
+    if data_sheet and data_sheet in wb.sheetnames:
+        ws_data = wb[data_sheet]
+    else:
+        for ws in wb.workwheets:
+            headers = {}
+            for col in range(1, ws.max_column + 1):
+                val = ws.cell(row=1, column=col).value
+                if val is None:
+                    continue
+                headers[normalize(val)] = (col, str(val))
+            if all(h.lower() in headers for h in (normalize(h) for h in REQUIRED_HEADERS)):
+                ws_data = ws
+                break
+    if ws_data is None:
+        raise ValueError(
+            f"{REQUIRED_HEADERS} not found"
+        )
+    header_map = {}
+    for col in range(1, ws_data.max_column + 1):
+        val = ws_data.cell(row=1, column = col).value
+        if val is None:
+            continue
+        header_map[normalize(val)] = col
+
+    col_broker = header_map[normalize("Broker")]
+    col_total = header_map[normalize("Broker_fee_total")]
+
+    last_row = ws_data.max_row
+    while last_row > 1 and ws_data.cell(row=last_row, column=col_broker).value in (None, ""):
+        last_row = last_row - 1
+    if last_row <= 1:
+        raise ValueError("No rows")
+
+    brokers = OrderedDict()
+    for r in range(2, last_row + 1):
+        b = ws_data.cell(row=r, column=col_broker).value
+        if b is None or str(b).strip() == "":
+            continue
+        brokers.setdefault(str(b).strip(), True)
