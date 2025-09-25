@@ -7,8 +7,27 @@ from datetime import datetime
 import logging
 import shutil
 import sys
-
 import pandas as pd
+
+"""
+This tool automates a simple Excel workflow designed to run from the same folder as the source workbook.
+
+Workflow:
+1) Locate the runtime folder reliably (both .py and PyInstaller .exe) via base_dir().
+2) Find the most recent .xlsx in that folder (ignoring Excel temp files like ~$.).
+3) Validate required columns (Broker, Broker_fee, Quantity) in a case-insensitive way.
+4) Prepare a clean table:
+   - Canonicalize headers and order them as [Broker, Broker_fee, Quantity].
+   - Compute Broker_fee_total = Quantity * Broker_fee.
+   - Optionally keep any extra columns after the core ones.
+5) Write a pivot-like summary in the same workbook:
+   - Create/refresh a “Resumen_Broker” sheet.
+   - Column A lists unique Broker values.
+   - Column B uses an Excel SUMIF formula to total Broker_fee_total per Broker.
+
+Assumptions: the executable/script and the source .xlsx live in the same directory; outputs are saved in a subfolder or as new sheets in the same file.
+Dependencies: pandas (data handling) and openpyxl (Excel I/O and formulas).
+"""
 
 APP_NAME = "excel-runner"
 REQUIRED_HEADERS = ("Broker", "Broker_fee_total")
@@ -155,3 +174,4 @@ def add_broker_summary_sheet(xlsx_path: Path,
         row += 1
 
     wb.save(xlsx_path)
+
